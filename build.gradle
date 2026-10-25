@@ -1,3 +1,14 @@
 plugins {
-    id 'com.android.application' version '8.5.2' apply false
+    id 'com.android.application'
+}
+android {
+    namespace 'com.studiopro'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.studiopro'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
 }

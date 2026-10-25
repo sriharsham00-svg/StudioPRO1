@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi TV Studio PRO</title>
+<style>
+:root{--bg:#07080c;--red:#e50914;--tx:#f4f5f8;--mut:#9aa0ad}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;color:var(--tx);font-family:Roboto,Arial,sans-serif}
+#stage{position:absolute;left:0;top:0;width:960px;height:540px;-webkit-transform-origin:0 0;transform-origin:0 0;overflow:hidden;background:var(--bg)}
+.bd{position:absolute;left:0;top:0;width:960px;height:540px;opacity:0;-webkit-transition:opacity .7s;transition:opacity .7s}
+.bd.on{opacity:1}
+#vig{position:absolute;left:0;top:0;width:960px;height:540px;background:linear-gradient(90deg,rgba(7,8,12,.95) 0%,rgba(7,8,12,.55) 45%,rgba(7,8,12,.1) 100%),linear-gradient(0deg,#07080c 0%,rgba(7,8,12,.85) 32%,rgba(7,8,12,0) 62%)}
+#tabs{position:absolute;left:48px;top:22px;display:-webkit-flex;display:flex}
+.tab{padding:7px 18px;margin-right:10px;border-radius:20px;font-size:16px;color:var(--mut);border:2px solid transparent;-webkit-transition:-webkit-transform .15s;transition:transform .15s}
+.tab.act{color:var(--tx);border-bottom-color:rgba(229,9,20,.0);font-weight:bold}
+.tab.f{color:#fff;background:var(--red);border-color:#fff;-webkit-transform:scale(1.1);transform:scale(1.1);box-shadow:0 0 18px rgba(229,9,20,.7)}
+#clock{position:absolute;right:48px;top:26px;font-size:18px;color:var(--mut)}
+#hero{position:absolute;left:48px;top:100px;width:520px}
+#hs{font-size:14px;letter-spacing:3px;color:var(--red);text-transform:uppercase;font-weight:bold}
+#ht{font-size:44px;font-weight:bold;margin:6px 0 8px;line-height:1.05}
+#hd{font-size:18px;color:#cfd3dc;line-height:1.35}
+#rows{position:absolute;left:0;top:262px;width:960px;-webkit-transition:-webkit-transform .3s;transition:transform .3s}
+.row{height:140px;position:relative;overflow:hidden}
+.rt{position:absolute;left:48px;top:0;font-size:18px;font-weight:bold;color:#e4e6ec}
+.trk{position:absolute;left:0;top:30px;white-space:nowrap;-webkit-transition:-webkit-transform .3s;transition:transform .3s;padding-left:48px}
+.card{display:inline-block;vertical-align:top;width:150px;height:84px;margin:8px 14px 0 0;border-radius:8px;position:relative;overflow:hidden;border:2px solid rgba(255,255,255,.08);-webkit-transition:-webkit-transform .15s,box-shadow .15s;transition:transform .15s,box-shadow .15s;opacity:.8}
+.card span{position:absolute;left:8px;bottom:6px;right:6px;font-size:14px;font-weight:bold;text-shadow:0 1px 4px #000;white-space:normal;line-height:1.1}
+.card.f{opacity:1;-webkit-transform:scale(1.1);transform:scale(1.1);border-color:#fff;box-shadow:0 0 18px rgba(229,9,20,.7),0 8px 20px rgba(0,0,0,.8);z-index:3}
+#amb{position:absolute;left:0;top:0;width:960px;height:540px;display:none;z-index:20;background:#000}
+#amb .bd{-webkit-transition:opacity 2s;transition:opacity 2s}
+#ac{position:absolute;left:48px;bottom:40px;font-size:64px;font-weight:200;text-shadow:0 2px 12px #000}
+#toast{position:absolute;right:48px;bottom:16px;font-size:14px;color:var(--mut);z-index:5}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bd on" id="b0"></div><div class="bd" id="b1"></div>
+  <div id="vig"></div>
+  <div id="tabs"></div><div id="clock"></div>
+  <div id="hero"><div id="hs"></div><div id="ht"></div><div id="hd"></div></div>
+  <div id="rows"></div>
+  <div id="toast">D-pad to navigate · OK to open</div>
+  <div id="amb"><div class="bd on" id="a0"></div><div class="bd" id="a1"></div><div id="ac"></div></div>
+</div>
+<script>
+(function(){
+var TABS=['Home','Apps','Live','Movies','Ambient'];
+// art: gradient stand-in; set u to a 1280x720 image URL for real fanart (works inside the TV app)
+var DATA=[
+ {n:'Streaming Apps',items:[
+  {t:'YouTube',s:'4K · Apps',d:'Browse and watch in up to 4K.',g:['#7a0b0b','#1a0306'],p:'com.google.android.youtube.tv'},
+  {t:'Netflix',s:'Streaming',d:'Pick up where you left off.',g:['#e50914','#1b0305'],p:'com.netflix.ninja'},
+  {t:'Prime Video',s:'Streaming',d:'Movies, series and originals.',g:['#0a4a7a','#030f1a'],p:'com.amazon.amazonvideo.livingroom'},
+  {t:'Hotstar',s:'Streaming',d:'Sport, shows and movies.',g:['#1b2a6b','#05081a'],p:'in.startv.hotstar'},
+  {t:'Settings',s:'System',d:'Network, display and sound.',g:['#2d3340','#0a0c10'],p:'com.android.tv.settings'}]},
+ {n:'Live Arena',items:[
+  {t:'Live Cricket Match',s:'Live now',d:'Ball-by-ball, straight from the stadium.',g:['#0b6b3a','#02170d'],p:'in.startv.hotstar'},
+  {t:'Premier League',s:'Tonight',d:'Matchday coverage and highlights.',g:['#4b1a7a','#0d0518'],p:''},
+  {t:'F1 Qualifying',s:'Up next',d:'Grid-deciding laps.',g:['#7a1a1a','#180505'],p:''},
+  {t:'News Live',s:'24x7',d:'Headlines as they happen.',g:['#3a3f4a','#0b0c10'],p:''}]},
+ {n:'Top Rated Movies',items:[
+  {t:'Oppenheimer',s:'2023 · Drama',d:'The story of the man behind the bomb.',g:['#8a4a0b','#1a0d03'],p:''},
+  {t:'Dune',s:'2021 · Sci-Fi',d:'A desert planet and a destiny.',g:['#a0702a','#1a1205'],p:''},
+  {t:'Interstellar',s:'2014 · Sci-Fi',d:'Love and time beyond the stars.',g:['#12305a','#040a14'],p:''},
+  {t:'Inception',s:'2010 · Thriller',d:'Dreams within dreams.',g:['#2a4a5a','#070d10'],p:''}]}
+];
+var $=function(i){return document.getElementById(i)};
+var stage=$('stage'),rowsEl=$('rows'),tabsEl=$('tabs');
+var row=0,col=[0,0,0],tabI=0,inTabs=false,ambient=false,cur=0,ambT=null,tabEls=[],trk=[],cards=[];
+function scale(){var s=Math.min(innerWidth/960,innerHeight/540);stage.style.webkitTransform=stage.style.transform='scale('+s+')';stage.style.left=(innerWidth-960*s)/2+'px';stage.style.top=(innerHeight-540*s)/2+'px'}
+function grad(g){return 'linear-gradient(135deg,'+g[0]+','+g[1]+')'}
+function art(el,it){el.style.backgroundImage=(it.u?'url('+it.u+'),':'')+grad(it.g);el.style.backgroundSize='cover'}
+var i,j,h='';
+TABS.forEach(function(t,k){var d=document.createElement('div');d.className='tab'+(k==0?' act':'');d.textContent=t;tabsEl.appendChild(d);tabEls.push(d)});
+DATA.forEach(function(r,ri){
+  var rw=document.createElement('div');rw.className='row';
+  var t=document.createElement('div');t.className='rt';t.textContent=r.n;rw.appendChild(t);
+  var tk=document.createElement('div');tk.className='trk';rw.appendChild(tk);trk.push(tk);cards[ri]=[];
+  r.items.forEach(function(it){var c=document.createElement('div');c.className='card';art(c,it);var s=document.createElement('span');s.textContent=it.t;c.appendChild(s);tk.appendChild(c);cards[ri].push(c)});
+  rowsEl.appendChild(rw)});
+var bi=0;
+function backdrop(it){bi=1-bi;var a=$('b'+bi),o=$('b'+(1-bi));art(a,it);a.className='bd on';o.className='bd'}
+function hero(it){$('hs').textContent=it.s;$('ht').textContent=it.t;$('hd').textContent=it.d;backdrop(it)}
+function render(){
+  var k,m;
+  for(k=0;k<cards.length;k++)for(m=0;m<cards[k].length;m++)cards[k][m].className='card'+((!inTabs&&k==row&&m==col[k])?' f':'');
+  for(k=0;k<tabEls.length;k++)tabEls[k].className='tab'+(k==0?' act':'')+((inTabs&&k==tabI)?' f':'');
+  rowsEl.style.webkitTransform=rowsEl.style.transform='translateY('+(-row*140)+'px)';
+  // glide the focused card to screen centre
+  var c=cards[row][col[row]],x=480-(c.offsetLeft+c.offsetWidth/2);
+  trk[row].style.webkitTransform=trk[row].style.transform='translateX('+Math.min(0,x)+'px)';
+  if(!inTabs)hero(DATA[row].items[col[row]]);
+}
+function toast(t){$('toast').textContent=t}
+function openItem(){
+  var it=DATA[row].items[col[row]];
+  if(window.Android&&Android.launch&&it.p){Android.launch(it.p)}
+  else toast(it.p?'Launch: '+it.p:it.t+' (no app linked yet)');
+}
+function ambStart(){
+  ambient=true;$('amb').style.display='block';var n=0,flat=[];
+  DATA.forEach(function(r){r.items.forEach(function(x){flat.push(x)})});
+  var ab=0;function step(){ab=1-ab;art($('a'+ab),flat[n%flat.length]);$('a'+ab).className='bd on';$('a'+(1-ab)).className='bd';n++}
+  step();ambT=setInterval(step,7000);
+}
+function ambStop(){ambient=false;$('amb').style.display='none';clearInterval(ambT)}
+function tick(){var d=new Date(),p=function(n){return n<10?'0'+n:n};var s=p(d.getHours())+':'+p(d.getMinutes());$('clock').textContent=s;$('ac').textContent=s}
+tick();setInterval(tick,15000);
+document.addEventListener('keydown',function(e){
+  var k=e.keyCode;
+  if(ambient){ambStop();e.preventDefault();return}
+  if(k==37||k==39){
+    if(inTabs){tabI=Math.max(0,Math.min(TABS.length-1,tabI+(k==39?1:-1)))}
+    else{col[row]=Math.max(0,Math.min(DATA[row].items.length-1,col[row]+(k==39?1:-1)))}
+  }else if(k==40){if(inTabs)inTabs=false;else row=Math.min(DATA.length-1,row+1)}
+  else if(k==38){if(!inTabs){if(row==0)inTabs=true;else row--}}
+  else if(k==13||k==23){
+    if(inTabs){if(tabI==4)ambStart();else if(tabI>0){inTabs=false;row=tabI-1}}
+    else openItem()}
+  else if(k==27||k==4){if(!inTabs){row=0;inTabs=false}return}
+  else return;
+  e.preventDefault();render();
+});
+window.addEventListener('resize',scale);scale();render();
+})();
+</script>
+</body>
+</html>
